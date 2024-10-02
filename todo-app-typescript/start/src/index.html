@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ToDo App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-r from-cyan-500 to-blue-500 min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-white rounded-lg shadow-xl overflow-hidden">
+    <div class="p-8">
+      <h1 class="text-3xl font-bold text-gray-800 mb-6">My ToDo List</h1>
+      <form id="todo-form" class="mb-6">
+        <div class="flex items-center border-b-2 border-blue-500 py-2">
+          <input type="text" id="todo-input" placeholder="Add a new todo"
+            class="appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 px-2 leading-tight focus:outline-none">
+          <button type="submit"
+            class="flex-shrink-0 bg-blue-500 hover:bg-blue-700 border-blue-500 hover:border-blue-700 text-sm border-4 text-white py-1 px-2 rounded">
+            Add
+          </button>
+        </div>
+      </form>
+      <ul id="todo-list" class="space-y-3"></ul>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:8080/todos';
+
+    async function fetchTodos() {
+      const response = await fetch(API_URL);
+      const todos = await response.json();
+      renderTodos(todos);
+    }
+
+    function renderTodos(todos) {
+      const todoList = document.getElementById('todo-list');
+      todoList.innerHTML = '';
+      todos.forEach(todo => {
+        const li = document.createElement('li');
+        li.className = 'bg-gray-100 rounded-lg shadow-md overflow-hidden transition-all duration-300 ease-in-out';
+        li.innerHTML = `
+                    <div class="todo-content flex items-center justify-between p-4">
+                        <div class="flex items-center space-x-3 flex-grow">
+                            <input id={todo.id} type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleComplete(${todo.id}, this.checked)" class="form-checkbox h-5 w-5 text-blue-600 transition duration-150 ease-in-out">
+                            <label for={todo.id} class="todo-text ${todo.completed ? 'line-through text-gray-500' : 'text-gray-800'}">${todo.title}</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="startEdit(this.closest('li'), ${todo.id})" class="edit-btn text-blue-500 hover:text-blue-600">Edit</button>
+                            <button onclick="deleteTodo(${todo.id})" class="text-red-500 hover:text-red-600">Delete</button>
+                        </div>
+                    </div>
+                    <div class="edit-content hidden p-4 bg-blue-100">
+                        <input type="text" class="edit-input w-full p-2 mb-2 border rounded" value="${todo.title}">
+                        <div class="flex justify-end space-x-2">
+                            <button onclick="saveEdit(this.closest('li'), ${todo.id})" class="save-btn bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded">Done</button>
+                            <button onclick="cancelEdit(this.closest('li'))" class="cancel-btn bg-gray-300 hover:bg-gray-400 text-gray-800 py-1 px-3 rounded">Cancel</button>
+                        </div>
+                    </div>
+                `;
+        todoList.appendChild(li);
+      });
+    }
+
+    async function addTodo(title) {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: Date.now().toString(), title, completed: false })
+      });
+      if (response.ok) {
+        fetchTodos();
+      }
+    }
+
+    function startEdit(li, id) {
+      li.querySelector('.todo-content').classList.add('hidden');
+      li.querySelector('.edit-content').classList.remove('hidden');
+    }
+
+    async function saveEdit(li, id) {
+      const newTitle = li.querySelector('.edit-input').value.trim();
+      if (newTitle) {
+        const response = await fetch(`${API_URL}/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: newTitle })
+        });
+        if (response.ok) {
+          fetchTodos();
+        }
+      }
+    }
+
+    function cancelEdit(li) {
+      li.querySelector('.todo-content').classList.remove('hidden');
+      li.querySelector('.edit-content').classList.add('hidden');
+    }
+
+    async function deleteTodo(id) {
+      const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        fetchTodos();
+      }
+    }
+
+    async function toggleComplete(id, completed) {
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed })
+      });
+      if (response.ok) {
+        fetchTodos();
+      }
+    }
+
+    document.getElementById('todo-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('todo-input');
+      if (input.value.trim()) {
+        addTodo(input.value.trim());
+        input.value = '';
+      }
+    });
+
+    fetchTodos();
+  </script>
+</body>
+
+</html>

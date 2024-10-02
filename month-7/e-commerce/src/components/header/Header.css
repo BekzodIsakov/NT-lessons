@@ -1,0 +1,31 @@
+nav {
+  display: flex;
+  gap: 1rem;
+}
+
+nav a {
+  color: cornflowerblue;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+}
+
+.flex-row {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.profile {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.profile img {
+  width: 30px;
+}
